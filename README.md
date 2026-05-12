@@ -178,3 +178,17 @@ The implementation follows the manuscript structure:
 - Stage 2 candidate-set listwise ranking with mined hard negatives.
 - EMA-based stabilization for trainable template encoder retrieval updates.
 
+## 9. Citation
+
+If you use this codebase in your research, please cite:
+
+```latex
+@misc{conretrobert2026,
+  title        = {ConRetroBert: EMA-Stabilized Dual Encoders for Template-Based Single-Step Retrosynthesis},
+  author       = {Mohammad Jahid Ibna Basher and Ali Khodabandeh Yalabadi and Ivan Garibay and Ozlem Ozmen Garibay},
+  year         = {2026},
+  note         = {NeurIPS 2026 submission},
+  institution  = {University of Central Florida},
+  address      = {Orlando, FL, USA}
+}
+```
