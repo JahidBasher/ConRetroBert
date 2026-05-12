@@ -5,8 +5,6 @@ logs
 *.log
 *.pth
 *.csv
-*.jsonl
-*.json
 temp
 .vscode
 research
