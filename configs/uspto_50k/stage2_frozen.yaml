@@ -1,0 +1,116 @@
+seed: 44
+
+data:
+  train_path: data/uspto-50k/raw_train.jsonl
+  val_path: data/uspto-50k/raw_val.jsonl
+  num_workers: 24
+  loader:
+    pin_memory: true
+    persistent_workers: true
+    prefetch_factor: 2
+  validation_filter:
+    enabled: false
+    mode: product_template_applicability
+    apply_splits: [train, val, test]
+    product_field: product
+    template_field: template
+
+tokenizer:
+  build_from: data/uspto-50k/merged_dataset_full.jsonl
+  fields: [product, template]
+  vocab_path: configs/tokenizer.json
+  rebuild: false
+  max_product_len: 384
+  max_template_len: 384
+  add_bos_eos: false
+
+model:
+  hidden_size: 256
+  num_layers: 6
+  num_heads: 8
+  dropout: 0.1
+  shared_encoder: false
+  mlm:
+    enabled: false
+    probability: 0.15
+    weight: 1.0
+
+optimizer:
+  lr: 2.0e-4
+  weight_decay: 0.01
+
+scheduler:
+  enabled: true
+  name: warmup_cosine
+  warmup_steps: 500
+  total_steps: null
+  min_lr_ratio: 0.01
+
+logging:
+  log_dir: logs
+  experiment_name: stage2_baseline_listwise
+  log_every_n_steps: 10
+  progress_bar: true
+  accelerator: auto
+  devices: auto
+  precision: 16-mixed
+  matmul_precision: high
+  cudnn_benchmark: true
+
+checkpoint:
+  dirpath: Aritfact/ExtraExp/uspto_50k/checkpoints_stage_2_ft_seed_44
+  save_top_k: 3
+  monitor: val_top1_acc
+  monitor_mode: max
+  every_n_epochs: null
+  every_n_train_steps: 200
+
+training:
+  stage: 2
+  epochs: 100
+  batch_size: 64
+  accumulate_grad_batches: 1
+  temperature: 0.07
+  max_grad_norm: 1.0
+  output_dir: artifacts/uspto_50k
+  stage2:
+    require_stage1_checkpoint: true
+    init_checkpoint: Aritfact/FINAL_MODEL_SELECTION_USPTO_FULL/USPTO_FULL_CONTRASTIVE_STAGE_1/last.ckpt
+    freeze_template_encoder: true
+    freeze_product_encoder: false
+    template_library_path: data/uspto-50k/merged_dataset_full.jsonl
+    template_token_cache:
+      path: Aritfact/ExtraExp/uspto_50k/checkpoints_stage_2_ft_seed_44/stage2_template_tokens.pt
+      load_if_exists: false
+      save: false
+    template_embeddings:
+      save_path: Aritfact/ExtraExp/uspto_50k/checkpoints_stage_2_ft_seed_44/stage2_template_embeddings.pt
+      encode_batch_size: 1024
+    candidate_sampling:
+      candidate_size: 64
+      hard_negatives: 56
+      inbatch_negatives: 8
+      random_negatives: 0
+      restrict_negatives_to_train_templates: true
+      retrieval:
+        enabled: true
+        backend: faiss
+        top_k: 128
+        fallback_to_inbatch_random: false
+        allow_matrix_in_training: true
+    loss:
+      temperature: 0.07
+      entropy_bonus: 0.001
+      label_smoothing: 0.02
+      lambda_applicable: 0.0
+      lambda_penalty: 0.0
+      penalty_top_k: 512
+    evaluation:
+      compute_topk_metrics: true
+      candidate_size: 128
+      retrieval_top_k: 256
+      top_k: [1, 3, 5, 10, 20, 50]
+
+validation:
+  mlm_eval: false
+  eval_every_n_steps: 600

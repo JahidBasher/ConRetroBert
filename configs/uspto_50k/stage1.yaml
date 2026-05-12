@@ -1,0 +1,82 @@
+seed: 42
+
+data:
+  train_path: data/uspto-50k/raw_train.jsonl
+  val_path: data/uspto-50k/raw_val.jsonl
+  num_workers: 24
+  loader:
+    pin_memory: true
+    persistent_workers: true
+    prefetch_factor: 2
+  validation_filter:
+    enabled: false
+    mode: product_template_applicability
+    apply_splits: [train, val, test]
+    product_field: product
+    template_field: template
+
+tokenizer:
+  build_from: data/uspto-50k/merged_dataset_full.jsonl
+  fields: [product, template]
+  vocab_path: configs/tokenizer.json
+  rebuild: false
+  max_product_len: 384
+  max_template_len: 384
+  add_bos_eos: false
+
+model:
+  hidden_size: 256
+  num_layers: 6
+  num_heads: 8
+  dropout: 0.1
+  shared_encoder: false
+  mlm:
+    enabled: false
+    probability: 0.10
+    weight: 1.0
+
+optimizer:
+  lr: 1.0e-4
+  weight_decay: 0.01
+
+scheduler:
+  enabled: true
+  name: warmup_cosine
+  warmup_steps: 500
+  total_steps: 9420
+  min_lr_ratio: 0.01
+
+logging:
+  log_dir: logs
+  experiment_name: stage1
+  log_every_n_steps: 10
+  progress_bar: true
+  accelerator: auto
+  devices: auto
+  precision: 16-mixed
+  matmul_precision: high
+  cudnn_benchmark: true
+
+checkpoint:
+  dirpath: artifacts/uspto_50k/checkpoints_stage_1
+  save_top_k: 3
+  every_n_epochs: 1
+  every_n_train_steps: null
+  save_last: true
+  monitor: val_top1_acc
+  monitor_mode: max
+
+training:
+  stage: 1
+  epochs: 100
+  batch_size: 256
+  accumulate_grad_batches: 1
+  temperature: 0.07
+  max_grad_norm: 1.0
+  output_dir: artifacts/uspto_50k/checkpoints_stage_1
+
+validation:
+  mlm_eval: false
+  eval_every_n_steps: 155
+  compute_topk_metrics: true
+  top_k: [1, 3, 5, 10, 20, 50]

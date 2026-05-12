@@ -1,0 +1,158 @@
+seed: 42
+
+data:
+  train_path: data/uspto-50k/raw_train.jsonl
+  val_path: data/uspto-50k/raw_val.jsonl
+  num_workers: 24
+  loader:
+    pin_memory: true
+    persistent_workers: true
+    prefetch_factor: 2
+  validation_filter:
+    enabled: false
+    mode: product_template_applicability
+    apply_splits: [train, val, test]
+    product_field: product
+    template_field: template
+
+tokenizer:
+  build_from: data/uspto-50k/merged_dataset_full.jsonl
+  fields: [product, template]
+  vocab_path: configs/tokenizer.json
+  rebuild: false
+  max_product_len: 384
+  max_template_len: 384
+  add_bos_eos: false
+
+model:
+  hidden_size: 256
+  num_layers: 6
+  num_heads: 8
+  dropout: 0.1
+  shared_encoder: false
+  mlm:
+    enabled: false
+    probability: 0.15
+    weight: 1.0
+
+optimizer:
+  lr: 1.0e-4
+  weight_decay: 0.01
+
+scheduler:
+  enabled: true
+  name: warmup_cosine
+  total_steps: 12500
+  warmup_steps: 500
+  min_lr_ratio: 0.01
+
+logging:
+  log_dir: logs
+  experiment_name: stage2_ema
+  log_every_n_steps: 10
+  progress_bar: true
+  accelerator: auto
+  devices: auto
+  precision: 16-mixed
+  matmul_precision: high
+  cudnn_benchmark: true
+
+checkpoint:
+  dirpath: Aritfact/uspto_50k_ft/checkpoints_stage_2_ema_mid
+  save_top_k: 3
+  save_last: true
+  monitor: val_top1_acc
+  monitor_mode: max
+  every_n_epochs: 1
+  every_n_train_steps: null
+
+training:
+  stage: 2
+  epochs: 100
+  batch_size: 64
+  accumulate_grad_batches: 2
+  temperature: 0.07
+  max_grad_norm: 1.0
+  output_dir: Aritfact/uspto_50k
+  stage2:
+    require_stage1_checkpoint: true
+    init_checkpoint: Aritfact/FINAL_MODEL_SELECTION_USPTO_FULL/USPTO_FULL_CONTRASTIVE_STAGE_1/last.ckpt
+
+    freeze_template_encoder:
+      enabled: false
+    freeze_product_encoder: false
+
+    template_lr: 1.0e-5
+    template_warmup_steps: 0
+    reset_template_optimizer_on_unfreeze: false
+    nan_guard:
+      enabled: true
+
+    ema:
+      enabled: true
+      decay: 0.999
+
+    trainable_template:
+      objective: listwise
+      max_candidates_per_product: 64
+      encode_batch_size: 32
+      micro_batch_size: 16
+      gradient_checkpointing: true
+      train_last_k_layers: 3
+      train_template_projector: true
+      train_template_embeddings: false
+      accumulate_grad_batches: 4
+      candidate_sampling:
+        candidate_size: 64
+        hard_negatives: 56
+        inbatch_negatives: 8
+        random_negatives: 0
+        restrict_negatives_to_train_templates: true
+        use_gpu_candidate_builder: true
+        retrieval:
+          top_k: 128
+          allow_matrix_in_training: true
+
+    template_library_path: data/uspto-50k/merged_dataset_full.jsonl
+    aggregate_train_by_product: true
+    aggregate_val_by_product: true
+    keep_template_embeddings_on_gpu: true
+
+    template_token_cache:
+      path: Aritfact/uspto_50k_ft/checkpoints_stage_2_ema_mid/stage2_template_tokens.pt
+      load_if_exists: true
+      save: true
+
+    template_embeddings:
+      encode_batch_size: 512
+
+    candidate_sampling:
+      candidate_size: 64
+      hard_negatives: 56
+      inbatch_negatives: 8
+      random_negatives: 0
+      restrict_negatives_to_train_templates: true
+      retrieval:
+        enabled: true
+        backend: faiss
+        top_k: 128
+        fallback_to_inbatch_random: false
+        allow_matrix_in_training: true
+
+    loss:
+      temperature: 0.07
+      entropy_bonus: 0.001
+      label_smoothing: 0.02
+      lambda_applicable: 0.0
+      lambda_penalty: 0.0
+      penalty_top_k: 512
+
+    evaluation:
+      compute_topk_metrics: true
+      candidate_size: 128
+      retrieval_top_k: 256
+      top_k: [1, 3, 5, 10, 20, 50]
+
+validation:
+  mlm_eval: false
+  eval_every_n_steps: 300

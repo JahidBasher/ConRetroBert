@@ -1,0 +1,14 @@
+artifacts
+__pycache__
+logs
+*.ckpt
+*.log
+*.pth
+*.csv
+*.jsonl
+*.json
+temp
+.vscode
+research
+docs/ipython
+run_batch_eval.py

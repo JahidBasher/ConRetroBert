@@ -1,0 +1,165 @@
+seed: 42
+
+data:
+  train_path: proc_train_singleprod_sample.jsonl
+  val_path: null
+  num_workers: 4
+  loader:
+    pin_memory: true
+    persistent_workers: true
+    prefetch_factor: 2
+  limit: null
+  val_limit: null
+  validation_filter:
+    enabled: false
+    mode: product_template_applicability
+    apply_splits: [train, val, test]
+    product_field: product
+    template_field: template
+
+tokenizer:
+  build_from: proc_train_singleprod_sample.jsonl
+  fields: [product, template]
+  vocab_path: artifacts/tokenizer.json
+  rebuild: false
+  max_product_len: 256
+  max_template_len: 256
+  add_bos_eos: false
+
+model:
+  hidden_size: 256
+  num_layers: 6
+  num_heads: 8
+  dropout: 0.1
+  shared_encoder: false
+  mlm:
+    enabled: false
+    probability: 0.15
+    weight: 1.0
+
+optimizer:
+  lr: 1.0e-4
+  weight_decay: 0.01
+
+scheduler:
+  enabled: true
+  name: warmup_cosine   # warmup_cosine | cosine | step | exp
+  t_max: 5
+  eta_min: 1.0e-6
+  warmup_steps: 500
+  total_steps: null
+  min_lr_ratio: 0.01
+  step_size: 1
+  gamma: 0.5
+
+logging:
+  log_dir: logs
+  experiment_name: stage1
+  log_every_n_steps: 10
+  progress_bar: true
+  accelerator: auto
+  devices: auto
+  precision: 32-true
+  matmul_precision: high
+  cudnn_benchmark: true
+
+checkpoint:
+  dirpath: checkpoints
+  save_top_k: 3
+  every_n_epochs: 1
+  every_n_train_steps: null
+
+training:
+  stage: 1
+  epochs: 5
+  batch_size: 32
+  accumulate_grad_batches: 1
+  temperature: 0.07
+  max_grad_norm: 1.0
+  output_dir: artifacts
+  stage2:
+    require_stage1_checkpoint: true
+    init_checkpoint: null
+    freeze_template_encoder: true
+    freeze_product_encoder: false
+    template_library_path: null
+    template_library_limit: null
+    aggregate_train_by_product: true
+    aggregate_val_by_product: true
+    keep_template_embeddings_on_gpu: false
+
+    # Template optimizer (Stage-2 EMA only — ignored by plain Stage-2).
+    template_lr: 1.0e-5
+    reset_template_optimizer_on_unfreeze: true
+
+    # EMA shadow encoder (Stage-2 EMA only).
+    ema:
+      enabled: false
+      decay: 0.999
+
+    # Trainable-template phase (Stage-2 EMA only).
+    trainable_template:
+      objective: listwise          # listwise | multi_positive_contrastive
+      max_candidates_per_product: 32
+      encode_batch_size: 32
+      micro_batch_size: 16
+      train_last_k_layers: null    # null = unfreeze all layers
+      train_template_projector: true
+      train_template_embeddings: false
+      freeze_projector_with_template_encoder: false
+      gradient_checkpointing: false
+      accumulate_grad_batches: null
+      candidate_sampling:
+        candidate_size: 64
+        hard_negatives: 56
+        inbatch_negatives: 8
+        random_negatives: 0
+        use_gpu_candidate_builder: false
+        retrieval:
+          top_k: 128
+          allow_matrix_in_training: false
+
+    template_token_cache:
+      path: artifacts/stage2_template_tokens.pt
+      load_if_exists: true
+      save: false
+    template_embeddings:
+      load_path: null
+      save_path: artifacts/stage2_template_embeddings.pt
+      encode_batch_size: 1024
+    candidate_sampling:
+      candidate_size: 64
+      hard_negatives: 56
+      inbatch_negatives: 8
+      random_negatives: 0
+      restrict_negatives_to_train_templates: false
+      retrieval:
+        enabled: true
+        backend: faiss
+        top_k: 128
+        faiss_index_path: null
+        save_faiss_index_path: null
+        nprobe: null
+        fallback_to_inbatch_random: true
+        allow_matrix_in_training: false
+    loss:
+      temperature: 0.07
+      entropy_bonus: 0.0
+      label_smoothing: 0.0
+      lambda_applicable: 0.0
+      lambda_penalty: 0.0
+      penalty_top_k: 512
+    evaluation:
+      compute_topk_metrics: true
+      candidate_size: 1024
+      retrieval_top_k: 2000
+      top_k: [10, 20, 30, 40, 50]
+
+validation:
+  mlm_eval: false
+  eval_every_n_steps: null
+  metrics:
+    enabled: false
+    top_k: [1, 5, 10, 20]
+    rdkit_valid: false
+    rdkit_forward_check: false
