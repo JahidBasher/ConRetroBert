@@ -1,13 +1,8 @@
 # ConRetroBert: EMA-Stabilized Dual Encoders for Template-Based Single-Step Retrosynthesis
 
-This repository contains the anonymous-review code package for the NeurIPS 2026 submission.
-
 ConRetroBert is a template-based retrosynthesis framework trained in two stages:
 1. Contrastive product-template representation learning.
 2. Candidate-set listwise ranking with hard negatives.
-
-The manuscript reports that Stage 2 provides the main gain over Stage 1, and EMA-stabilized
-template adaptation further improves top-k performance on USPTO-50k.
 
 ## Abstract
 
