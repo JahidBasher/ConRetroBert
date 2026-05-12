@@ -1,4 +1,4 @@
-# ConRetroBert: EMA-Stabilized Dual Encoders for Template-Based Single-Step Retrosynthesis
+## ConRetroBert: EMA-Stabilized Dual Encoders for Template-Based Single-Step Retrosynthesis
 
 Public release of the ConRetroBert codebase for template-based single-step retrosynthesis.
 
@@ -6,22 +6,22 @@ ConRetroBert is a template-based retrosynthesis framework trained in two stages:
 1. Contrastive product-template representation learning.
 2. Candidate-set listwise ranking with hard negatives.
 
-## 1. Released Artifacts
+### 1. Released Artifacts
 
 - Model checkpoints: <https://drive.google.com/drive/folders/1iSKIUiZZ8uA7KdYR62S6YjhV2eVBKKNj?usp=drive_link>
 - Model dataset: <https://drive.google.com/file/d/1ahCJe1e594Meaxm7xJoU30O6idc0EY_q/view?usp=drive_link>
 
-## Abstract
+### Abstract
 
 Template-based single step retrosynthesis predicts reactants by selecting and applying an explicit reaction template, making each prediction traceable to a chemical transformation rule. This interpretability is useful for synthesis planning, but template-based methods are often viewed as less competitive than template free models because template prediction is commonly formulated as global classification over a long tailed rule library. We argue that this weakness is not inherent to templates, but to the learning formulation. We present \textbf{ConRetroBert}, a dual encoder framework that reframes template-based retrosynthesis as dense product template retrieval followed by candidate set listwise ranking. In Stage 1, contrastive pretraining learns a shared embedding space between products and reaction templates. In Stage 2, a multi positive listwise objective refines template ranking over mined hard negative candidate sets, matching the inference time decision problem more closely than full vocabulary classification. To enable template side adaptation without destabilizing hard negative mining, ConRetroBert uses a slow moving exponential moving average, or EMA, template encoder for retrieval bank construction while updating the live template encoder through the ranking loss. On the local USPTO-50k benchmark, the main gain comes from Stage 2 candidate set ranking, which improves top-1 reaction accuracy from 50.5% to about 61.3%, while EMA stabilized template adaptation provides a further improvement to about 62.4%. The local model reaches 81.6%, 85.3%, and 87.8% at top-3, top-5, and top-10. We further show that retrieval based template prediction is especially strong in the long tail of rare templates, and that Stage 2 ranking improves the applicability of retrieved templates relative to contrastive retrieval alone. As a separate scaling result, fine tuning from a leakage controlled USPTO-Full checkpoint reaches 75.4% top-1 accuracy on USPTO-50k. These results show that template-based retrosynthesis can combine strong predictive performance with chemically inspectable predictions, challenging the common assumption that high accuracy requires abandoning explicit reaction templates.
 
-## 2. Repository Scope
+### 2. Repository Scope
 
 - Public runnable code for training and evaluation.
 - Packaged local dataset under `data/uspto-50k/`.
 - Training, evaluation, and batch-evaluation scripts for single-step retrosynthesis.
 
-## 3. Environment
+### 3. Environment
 
 Requirements:
 - Python >= 3.10
@@ -35,7 +35,7 @@ pip install pytorch_lightning==2.4.0
 pip install tensorboard
 ```
 
-## 4. Packaged Data
+### 4. Packaged Data
 
 The repository includes:
 
@@ -74,7 +74,7 @@ Per-file split semantics:
 - `merged_dataset_full.jsonl`: union of all three splits (49,998 rows).
 - `merged_dataset_filtered.jsonl`: filtered subset of the merged dataset (48,755 rows).
 
-## 5. Quickstart
+### 5. Quickstart
 
 Build tokenizer:
 
@@ -86,7 +86,7 @@ python scripts/prepare_tokenizer.py \
   --fields product,template
 ```
 
-## 6. Training (Manuscript Pipeline)
+### 6. Training (Manuscript Pipeline)
 
 Stage 1 contrastive training:
 
@@ -121,7 +121,7 @@ python train_lightning.py \
   --resume /path/to/last.ckpt
 ```
 
-## 7. Evaluation
+### 7. Evaluation
 
 Build template cache:
 
@@ -155,7 +155,7 @@ python onestep_batch_retrosynthesis_evaluation.py /path/to/experiment_root \
   --eval-jsonl data/uspto-50k/raw_test.jsonl
 ```
 
-## 8. Config Mapping
+### 8. Config Mapping
 
 Relevant config files:
 
@@ -170,13 +170,13 @@ Before long runs, verify these fields in your selected config:
 - `training.output_dir`
 - `training.stage2.init_checkpoint` (or pass `--pretrained`)
 
-## 9. Public Release Notes
+### 9. Public Release Notes
 
 - Some Stage-2 configs may contain local output/checkpoint paths from internal runs.
 - Verify config paths before training or evaluation in a new environment.
 - For reproducibility, prefer storing generated artifacts (checkpoints, caches, summaries) under a dedicated `artifacts/` directory.
 
-## 10. Manuscript Alignment
+### 10. Manuscript Alignment
 
 The implementation follows the manuscript structure:
 
@@ -185,7 +185,7 @@ The implementation follows the manuscript structure:
 - Stage 2 candidate-set listwise ranking with mined hard negatives.
 - EMA-based stabilization for trainable template encoder retrieval updates.
 
-## 11. Citation
+### 11. Citation
 
 If you use this codebase in your research, please cite:
 
