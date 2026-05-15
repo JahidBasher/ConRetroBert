@@ -190,12 +190,13 @@ The implementation follows the manuscript structure:
 If you use this codebase in your research, please cite:
 
 ```bibtex
-@misc{conretrobert2026,
-  title        = {ConRetroBert: EMA-Stabilized Dual Encoders for Template-Based Single-Step Retrosynthesis},
-  author       = {Mohammad Jahid Ibna Basher and Ali Khodabandeh Yalabadi and Ivan Garibay and Ozlem Ozmen Garibay},
-  year         = {2026},
-  note         = {Public release},
-  institution  = {University of Central Florida},
-  address      = {Orlando, FL, USA}
+@misc{basher2026conretrobertemastabilizeddual,
+      title={ConRetroBert: EMA Stabilized Dual Encoders for Template-Based Single-Step Retrosynthesis}, 
+      author={Mohammad Jahid Ibna Basher and Ali Khodabandeh Yalabadi and Ivan Garibay and Ozlem Ozmen Garibay},
+      year={2026},
+      eprint={2605.12736},
+      archivePrefix={arXiv},
+      primaryClass={cs.LG},
+      url={https://arxiv.org/abs/2605.12736}, 
 }
 ```
